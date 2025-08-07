@@ -33,7 +33,9 @@ const ExcelViewer = () => {
     };
 
     const generarOrdenes = async () => {
-        setLoading(true);
+        const response = await axios.get(`http://10.0.0.19:5000/generarOF`);
+        console.log(response)
+       /* setLoading(true);
         const listaID = excelData.slice(1).reduce((acc, cur) => {
             const lanzamiento = cur[0]
             const idArticulo = cur[1]
@@ -113,7 +115,7 @@ const ExcelViewer = () => {
             // Aquí puedes actualizar la tabla o interfaz de usuario con `updatedExcelData`
             // Dependiendo de cómo se gestiona el estado de la tabla, esto puede variar
             setLoading(false);
-        }
+        }*/
     }
     
 

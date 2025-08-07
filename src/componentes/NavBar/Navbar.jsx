@@ -15,6 +15,8 @@ const MiNavbar = () => {
         { name: 'Clonador', href: "clonador", current: false },
         { name: 'Producción', href: "ordenF", current: false },
         { name: 'Almacén', href: "almacen", current: false },
+        { name: 'Servicio MES', href: "restartServices", current: false },
+        { name: 'Presencia', href: "presencia", current: false },
     ]
     return (
         <Disclosure as="nav" className="bg-blue-600">
