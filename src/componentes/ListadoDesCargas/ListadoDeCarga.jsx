@@ -2,6 +2,7 @@ import { useState } from 'react';
 import ResultsTable from './ResultsTable';
 import FiltrosForm from './FiltrosForm';
 import { CargaService } from '../../services/apiService';
+import CargaCalendario from './CargaCalendario';
 
 const ListadoDeCarga = () => {
   const [resultados, setResultados] = useState(null);
@@ -30,8 +31,8 @@ const ListadoDeCarga = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="bg-white rounded-lg shadow-md p-6">
+    <div className="w-full px-4 py-4 mr-4">
+      <div className="bg-white rounded-lg shadow-md p-6 w-full">
         <h1 className="text-2xl font-bold text-gray-800 mb-6">Listado de Carga</h1>
         
         <FiltrosForm
@@ -45,6 +46,13 @@ const ListadoDeCarga = () => {
             data={resultados}
             loading={cargando}
             error={error}
+          />
+        </div>
+        <div className="mt-6">
+          <CargaCalendario
+          data={resultados}
+          loading={cargando}
+          error={error}
           />
         </div>
       </div>

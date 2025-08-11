@@ -7,7 +7,7 @@ const Layout = () => {
         <MiNavbar />
       </div>
       {/* className="flex flex-grow items-center justify-center px-10 mx-auto" */}
-      <div className="flex-grow">
+      <div className="flex-grow w-full">
         <Outlet />
       </div>
       {/* <div className="footer-app"></div> */}

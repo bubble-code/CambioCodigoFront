@@ -51,4 +51,13 @@ export const CargaService = {
       throw new Error(error.message || 'Error al obtener listado de Cargas');
     }
   },
+  async getCentros() {
+    try {
+      const response = await apiClient.get('/getCentros');
+      return response.data;
+    } catch (error) {
+      throw new Error(error.message || 'Error al obtener la lista de centros');
+    }
+  },
 };
+
