@@ -49,7 +49,7 @@ const FiltrosForm = ({ onSubmit, onReset, loading }) => {
   return (
     <form onSubmit={handleSubmit} onReset={handleFormReset} className="mb-6 bg-gray-50 p-4 rounded-lg border border-gray-200">
       <div className="grid grid-cols-1 md:grid-cols-12 gap-4 mb-4">
-        <div className="md:col-span-2">
+        <div className="md:col-span-2 hidden">
           <label htmlFor="idSeccion" className="block text-sm font-medium text-gray-700 mb-1">
             Centro
           </label>
