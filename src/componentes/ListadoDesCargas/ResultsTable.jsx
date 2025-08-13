@@ -5,38 +5,12 @@ import { HTML5Backend } from 'react-dnd-html5-backend';
 import DraggableHeader from './DraggableHeader';
 import PropTypes, { bool } from 'prop-types';
 import moment from 'moment';
+import { formatearNumero, formatearFechaES } from '../utils/cargaHelpers'
+import { ErrorMessage, LoadingMessage, NoDataMessage } from '../utils/MensajesFetch'
 
 
 const ResultsTable = ({ data, loading, error }) => {
   const [columnOrder, setColumnOrder] = useState([]);
-
-
-  const formatearNumero = (value, decimales = 0) => {
-    if (value === null || value === "") return "";
-    const numero = parseFloat(String(value).replace(",", "."));
-    if (isNaN(numero) || numero === 0) return ""
-    return numero.toFixed(decimales).replace(".", ",");
-  }
-
-  const formatearFechaES = (fechaGMT) => {
-    if (!fechaGMT) return '';
-
-    try {
-      // Parseamos como UTC explícitamente
-      const fecha = moment.utc(fechaGMT);
-
-      if (!fecha.isValid()) {
-        // Si falla, intentamos con el formato de la base de datos
-        const fechaAlt = moment.utc(fechaGMT, 'YYYY-MM-DD HH:mm:ss.SSS', true);
-        return fechaAlt.isValid() ? fechaAlt.format('DD/MM/YYYY') : fechaGMT;
-      }
-
-      return fecha.format('DD/MM/YYYY');
-    } catch (error) {
-      console.error('Error al formatear fecha:', error);
-      return fechaGMT;
-    }
-  }
 
   const columns = useMemo(() => [
     {
@@ -357,32 +331,6 @@ const ResultsTable = ({ data, loading, error }) => {
     </DndProvider>
   );
 };
-
-const LoadingMessage = () => (
-  <div className="p-4 text-center">
-    <div className="inline-flex items-center">
-      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-      </svg>
-      Cargando datos...
-    </div>
-  </div>
-);
-
-const ErrorMessage = ({ message }) => (
-  <div className="p-4 text-center bg-red-50 rounded-lg border border-red-200">
-    <p className="text-red-600 font-medium">Error al cargar los datos</p>
-    <p className="text-red-500 text-sm mt-1">{message}</p>
-  </div>
-);
-
-const NoDataMessage = () => (
-  <div className="p-4 text-center bg-blue-50 rounded-lg border border-blue-200">
-    <p className="text-blue-600">No hay datos disponibles</p>
-    <p className="text-blue-500 text-sm mt-1">Realiza una búsqueda para ver los resultados</p>
-  </div>
-);
 
 ResultsTable.propTypes = {
   data: PropTypes.array,

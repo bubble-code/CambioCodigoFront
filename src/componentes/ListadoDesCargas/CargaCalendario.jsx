@@ -15,7 +15,7 @@ const CargaCalendario = ({ data, loading, error }) => {
             }
         };
         fetchCentros();
-    },[])
+    }, [])
 
 
     const getColorPorCarga = (carga) => {
@@ -49,7 +49,7 @@ const CargaCalendario = ({ data, loading, error }) => {
                         <th className="w-40 bg-gray-100 border p-2 text-left">Centro</th>
                         {fechas.map((fecha, idx) => (
                             <th key={idx} className="w-24 bg-gray-100 border p-2 text-center">
-                                {formatearFechaES(fecha).toLocaleDateString('es-ES')}
+                                {formatearFechaES(fecha)}
                             </th>
                         ))}
                     </tr>

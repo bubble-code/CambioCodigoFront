@@ -59,5 +59,16 @@ export const CargaService = {
       throw new Error(error.message || 'Error al obtener la lista de centros');
     }
   },
+  async getCargaPorCentros(fDesde, fHasta) {
+    try {
+      const dataFetch = await apiClient.get('/getCargaCentros', {
+        fechaDesde: fDesde,
+        fechaHasta: fHasta
+      })
+      return dataFetch
+    } catch (error) {
+      throw new Error(error.message || 'Error al obtener la carga por centros')
+    }
+  }
 };
 
