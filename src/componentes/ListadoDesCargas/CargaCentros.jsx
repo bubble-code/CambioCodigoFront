@@ -1,13 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
-import { formatearFechaES } from '../utils/cargaHelpers'
 import { CargaService } from '../../services/apiService';
 import { useTable } from 'react-table';
-import { DndProvider } from 'react-dnd';
-import { HTML5Backend } from 'react-dnd-html5-backend';
 import { formatearNumero } from '../utils/cargaHelpers'
 import { LoadingMessage, ErrorMessage, NoDataMessage } from '../utils/MensajesFetch'
 
-const CargaCentros = ({ fechaDesde, fechaHasta }) => {
+const CargaCentros = ({ fechaDesde, fechaHasta, listaOfs }) => {
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -17,8 +14,9 @@ const CargaCentros = ({ fechaDesde, fechaHasta }) => {
             setLoading(true);
             setError(null);
             try {
-                const dataCargas = await CargaService.getCargaPorCentros(fechaDesde, fechaHasta);
-                setData(dataCargas);
+                const dataCargas = await CargaService.CargaTodosCentros(fechaDesde, fechaHasta, listaOfs);
+                // console.log(dataCargas.data)
+                setData(dataCargas.data);
             } catch (err) {
                 console.error("Error al obtener la carga de los centros", err);
                 setError("No se pudo cargar la información");
@@ -27,7 +25,7 @@ const CargaCentros = ({ fechaDesde, fechaHasta }) => {
             }
         };
         fetchData();
-    }, [fechaDesde, fechaHasta]);
+    }, [listaOfs]);
 
     const columns = useMemo(() => [
         {
@@ -57,7 +55,7 @@ const CargaCentros = ({ fechaDesde, fechaHasta }) => {
         {
             Header: 'Carga Trabajo',
             accessor: 'CargaTrabajo',
-            Cell: ({ value }) => value,
+            Cell: ({ value }) => formatearNumero(value, 3),
             width: 100,
         },
         {
@@ -75,37 +73,37 @@ const CargaCentros = ({ fechaDesde, fechaHasta }) => {
         {
             Header: 'Cant Trabajos',
             accessor: 'QTrabajos',
-            Cell: ({ value }) => value,
+            Cell: ({ value }) => formatearNumero(value),
             width: 100,
         },
         {
             Header: 'Dias',
             accessor: 'Dias',
-            Cell: ({ value }) => value,
+            Cell: ({ value }) => formatearNumero(value, 1),
             width: 100,
         },
         {
             Header: 'Carga Total',
             accessor: 'CargaTotal',
-            Cell: ({ value }) => value,
+            Cell: ({ value }) => formatearNumero(value, 1),
             width: 100,
         },
         {
             Header: 'Carga Dias',
             accessor: 'CargaDias',
-            Cell: ({ value }) => value,
+            Cell: ({ value }) => formatearNumero(value, 1),
             width: 100,
         },
         {
             Header: 'Carga Inmediata',
             accessor: 'CargaInmediata',
-            Cell: ({ value }) => value,
+            Cell: ({ value }) => formatearNumero(value, 1),
             width: 100,
         },
         {
             Header: 'Carga Inmediata Dias',
             accessor: 'CargaInmediataDias',
-            Cell: ({ value }) => value,
+            Cell: ({ value }) => formatearNumero(value, 1),
             width: 100,
         },
         {

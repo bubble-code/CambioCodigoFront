@@ -3,8 +3,8 @@ import { Tab, TabGroup, TabList, TabPanel, TabPanels } from '@headlessui/react';
 import ResultsTable from './ResultsTable';
 import FiltrosForm from './FiltrosForm';
 import { CargaService } from '../../services/apiService';
-import CargaCalendario from './CargaCalendario';
 import CargaCentros from './CargaCentros';
+import DetallesCargaCentros from './DetallesCargaCentros/DetallesCargaCentros'; 
 
 function classNames(...classes) {
   return classes.filter(Boolean).join(' ');
@@ -12,17 +12,32 @@ function classNames(...classes) {
 
 const ListadoDeCarga = () => {
   const [resultados, setResultados] = useState(null);
+  const [listOfs, setListOfs] = useState(new Set());
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState(null);
+  const [filtros, setFiltros] = useState({
+    idSeccion: "",
+    fechaDesde: null,
+    fechaHasta: null,
+    filtros: null,
+  })
 
   const handleSubmit = async (filtros) => {
     setCargando(true);
     setError(null);
     setResultados(null);
+    setFiltros(filtros)
 
     try {
       const data = await CargaService.getListadoCarga(filtros);
       setResultados(data);
+      const ofs = new Set()
+      data.forEach(element => {
+        if (element['Ordenfabricacion'] != null )
+          ofs.add(element['Ordenfabricacion'])
+      });
+      // console.log(ofs)
+      setListOfs(ofs)
     } catch (err) {
       setError(err.message);
       console.error('Error al obtener datos:', err);
@@ -75,13 +90,17 @@ const ListadoDeCarga = () => {
                 />
               </TabPanel>
               <TabPanel>
-                <CargaCentros />
+                <CargaCentros
+                  fechaDesde={filtros.fechaDesde}
+                  fechaHasta={filtros.fechaHasta}
+                  listaOfs={listOfs}
+                />
               </TabPanel>
               <TabPanel>
-                <CargaCalendario
-                  data={resultados}
-                  loading={cargando}
-                  error={error}
+                <DetallesCargaCentros
+                  fechaDesde={filtros.fechaDesde}
+                  fechaHasta={filtros.fechaHasta}
+                  listaOfs={listOfs}
                 />
               </TabPanel>
               <TabPanel>
