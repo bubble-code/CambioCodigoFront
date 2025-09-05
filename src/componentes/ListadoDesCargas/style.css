@@ -1,0 +1,43 @@
+/* Estilos para la tabla estilo Excel */
+.table-container {
+  position: relative;
+}
+
+/* Estilos para el menú desplegable */
+.menu-items {
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+}
+
+/* Mejora la apariencia de los filtros */
+input[type="text"]:focus {
+  outline: none;
+  /* ring: 2px;
+  ring-color: #3b82f6; */
+  border-color: #3b82f6;
+}
+
+/* Estilos para las celdas */
+td, th {
+  vertical-align: middle;
+}
+
+/* Scroll suave */
+.overflow-x-auto {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e0 #f7fafc;
+}
+
+.overflow-x-auto::-webkit-scrollbar {
+  height: 8px;
+}
+
+.overflow-x-auto::-webkit-scrollbar-track {
+  background: #f7fafc;
+}
+
+.overflow-x-auto::-webkit-scrollbar-thumb {
+  background-color: #cbd5e0;
+  border-radius: 4px;
+}

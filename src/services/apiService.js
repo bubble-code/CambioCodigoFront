@@ -2,7 +2,7 @@
 import axios from 'axios';
 
 const API_BASE_URL = 'http://10.0.0.19:5000';
-const API_TIMEOUT = 10000;
+const API_TIMEOUT = 180000;
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -72,10 +72,10 @@ export const CargaService = {
       throw new Error(error.message || 'Error al obtener la carga por centros')
     }
   },
-  async CargaPorCentros(idcentro, listaOfs = []) {
+  async CargaPorSeccion(idSeccion, listaOfs = []) {
     try {
-      const response = await apiClient.post('/getCargaCentros', {
-        idcentro,
+      const response = await apiClient.post('/getCargaPorSeccion', {
+        idSeccion,
         listOfs: Array.from(listaOfs)
       });
       return response

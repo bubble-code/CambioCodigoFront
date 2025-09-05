@@ -1,72 +1,93 @@
-import { useMemo, useState, useEffect } from 'react';
-import { useTable, usePagination } from 'react-table'; // Añadido usePagination
-import { DndProvider } from 'react-dnd';
-import { HTML5Backend } from 'react-dnd-html5-backend';
-import DraggableHeader from './DraggableHeader';
-import PropTypes, { bool } from 'prop-types';
+import { useMemo, useState, useCallback } from 'react';
+import {
+  useReactTable,
+  getCoreRowModel,
+  getSortedRowModel,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  flexRender,
+} from '@tanstack/react-table';
+import { Menu, MenuButton, MenuItems, MenuItem, Portal } from '@headlessui/react';
+import { ChevronUpDownIcon, FunnelIcon, ChevronUpIcon, ChevronDownIcon, Cog6ToothIcon } from '@heroicons/react/24/outline';
+import PropTypes from 'prop-types';
 import moment from 'moment';
-import { formatearNumero, formatearFechaES } from '../utils/cargaHelpers'
-import { ErrorMessage, LoadingMessage, NoDataMessage } from '../utils/MensajesFetch'
-
+import { formatearNumero, formatearFechaES } from '../utils/cargaHelpers';
+import { ErrorMessage, LoadingMessage, NoDataMessage } from '../utils/MensajesFetch';
+import IconFecha from './IconFecha';
+import "./style.css";
 
 const ResultsTable = ({ data, loading, error }) => {
-  const [columnOrder, setColumnOrder] = useState([]);
+  const [sorting, setSorting] = useState([]);
+  const [globalFilter, setGlobalFilter] = useState('');
+  const [columnFilters, setColumnFilters] = useState([]);
 
   const columns = useMemo(() => [
     {
-      Header: 'Artículo',
-      accessor: 'IDArticulo',
-      Cell: ({ value }) => value || '-',
-      width: 100,
+      header: 'Artículo',
+      accessorKey: 'IDArticulo',
+      cell: ({ getValue }) => getValue() || '-',
+      size: 100,
+      enableColumnFilter: true,
+      filterFn: 'includesString',
     },
     {
-      Header: 'Descripción',
-      accessor: 'DescArticulo',
-      Cell: ({ value }) => value || '',
-      width: 200,
+      header: 'Descripción',
+      accessorKey: 'DescArticulo',
+      cell: ({ getValue }) => getValue() || '',
+      size: 200,
+      enableColumnFilter: true,
+      filterFn: 'includesString',
     },
     {
-      Header: 'DescCliente',
-      accessor: 'DescCliente',
-      Cell: ({ value }) => value || '',
-      width: 100,
+      header: 'DescCliente',
+      accessorKey: 'DescCliente',
+      cell: ({ getValue }) => getValue() || '',
+      size: 100,
+      enableColumnFilter: true,
+      filterFn: 'includesString',
     },
     {
-      Header: 'FechaReCliente',
-      accessor: 'FechaReCliente',
-      Cell: ({ value, row }) => {
+      header: 'FechaReCliente',
+      accessorKey: 'FechaReCliente',
+      cell: ({ getValue, row }) => {
+        const value = getValue();
         if (!value) return '';
         const fecha = moment.utc(value);
-        const fechaRender = formatearFechaES(value)
+        const fechaRender = formatearFechaES(value);
         const hoy = moment().startOf('day');
+        const fechaPropuesta = row.original.FechaPropuesta;
+        const tieneAtraso = formatearFechaES(fechaPropuesta) < hoy;
+        let classes = '';
+        if (fecha.isBefore(hoy, 'day')) {
+          classes = 'bg-red-100 text-blue-700 border border-red-300 px-2 py-1 rounded-full text-xs font-semibold';
+        }
+        return (
+          <div className="flex flex-row items-end justify-end">
+            {tieneAtraso || (
+              <span className="mr-1 relative group">
+                <IconFecha fechaPropuesta={fechaPropuesta} />
+              </span>
+            )}
+            <span className={classes}>
+              {fechaRender}
+            </span>
+          </div>
+        );
+      },
+      size: 100,
+    },
+    {
+      header: 'Nota L',
+      accessorKey: 'NotaL',
+      cell: ({ getValue }) => getValue() || '',
+      size: 50,
+    },
+    {
+      header: 'QPendiente',
+      accessorKey: 'QPendiente',
+      cell: ({ getValue, row }) => {
+        const value = getValue();
         const estadoCero = row.original.Estado === 0;
-        let classes = ''
-        if (estadoCero) {
-          classes = 'bg-green-100 text-green-700 border border-green-300 px-2 py-1 rounded-full text-xs font-semibold';
-        }
-        else if (fecha.isBefore(hoy, 'day')) {
-          classes = 'bg-red-100 text-red-700 border border-red-300 px-2 py-1 rounded-full text-xs font-semibold';
-        }
-
-        return (
-          <span className={classes}>
-            {fechaRender}
-          </span>)
-      },
-      width: 100,
-    },
-    {
-      Header: 'Nota L',
-      accessor: 'NotaL',
-      Cell: ({ value }) => value || '',
-      width: 50,
-      maxWidth: 50
-    },
-    {
-      Header: 'QPendiente',
-      accessor: 'QPendiente',
-      Cell: ({ value, row }) => {
-        const estadoCero = row.original.Estado === 0
         let classes = estadoCero ? 'bg-green-100 text-green-700 border border-green-300 px-2 py-1 rounded-full text-xs font-semibold' : '';
         return (
           <span className={classes}>
@@ -74,133 +95,174 @@ const ResultsTable = ({ data, loading, error }) => {
           </span>
         );
       },
-      width: 100,
+      size: 100,
     },
     {
-      Header: 'Stock',
-      accessor: 'Existencias',
-      Cell: ({ value, row }) => {
-        const estadoCero = row.original.Estado === 0
-        let classes = estadoCero ? 'bg-green-100 text-green-700 border border-green-300 px-2 py-1 rounded-full text-xs font-semibold' : '';
+      header: 'Stock',
+      accessorKey: 'Existencias',
+      cell: ({ getValue, row }) => {
+        const value = getValue();
+        const estado = row.original.Estado;
+        let classes = '';
+        switch (estado) {
+          case 0:
+          case 2:
+            classes = 'bg-green-100 text-green-700 border border-green-300 px-2 py-1 rounded-full text-xs font-semibold';
+            break;
+          default:
+            break;
+        }
         return (
           <span className={classes}>
             {formatearNumero(value)}
           </span>
         );
       },
-      width: 100,
+      size: 100,
     },
     {
-      Header: 'NPedido',
-      accessor: 'NPedido',
-      Cell: ({ value }) => value || '',
-      width: 100,
+      header: 'NPedido',
+      accessorKey: 'NPedido',
+      cell: ({ getValue }) => getValue() || '',
+      size: 100,
+      enableColumnFilter: true,
+      filterFn: 'includesString',
     },
     {
-      Header: 'Linea',
-      accessor: 'Linea',
-      Cell: ({ value }) => value || '',
-      width: 100,
+      header: 'Linea',
+      accessorKey: 'Linea',
+      cell: ({ getValue }) => getValue() || '',
+      size: 100,
     },
     {
-      Header: 'Precio',
-      accessor: 'Precio',
-      Cell: ({ value }) => formatearNumero(value, 2),
-      width: 100,
+      header: 'Precio',
+      accessorKey: 'Precio',
+      cell: ({ getValue }) => formatearNumero(getValue(), 2),
+      size: 100,
     },
     {
-      Header: 'Total',
-      accessor: 'Total',
-      Cell: ({ value }) => formatearNumero(value, 2),
-      width: 100,
+      header: 'Total',
+      accessorKey: 'Total',
+      cell: ({ getValue }) => formatearNumero(getValue(), 2),
+      size: 100,
     },
     {
-      Header: 'BIN',
-      accessor: 'BIN',
-      Cell: ({ value }) => formatearNumero(value),
-      width: 100,
+      header: 'BIN',
+      accessorKey: 'BIN',
+      cell: ({ getValue, row }) => {
+        const value = getValue();
+        const estado = row.original.Estado;
+        let classes = '';
+        switch (estado) {
+          case 2:
+            classes = 'bg-green-100 text-green-700 border border-green-300 px-2 py-1 rounded-full text-xs font-semibold';
+            break;
+          default:
+            break;
+        }
+        return (
+          <span className={classes}>
+            {formatearNumero(value) || ''}
+          </span>
+        );
+      },
+      size: 100,
     },
     {
-      Header: 'Disponible',
-      accessor: 'Disponible',
-      Cell: ({ value }) => formatearNumero(value),
-      width: 100,
+      header: 'Disponible',
+      accessorKey: 'Disponible',
+      cell: ({ getValue }) => formatearNumero(getValue()),
+      size: 100,
     },
     {
-      Header: 'FasesR',
-      accessor: 'FaseR',
-      Cell: ({ value, row }) => {
+      header: 'FasesR',
+      accessorKey: 'FaseR',
+      cell: ({ getValue, row }) => {
+        const value = getValue();
         if (!value) return '';
-        const estadoCero = row.original.Estado === 0;
-        const classes = estadoCero
-          ? 'bg-green-100 text-green-700 border border-green-300 px-2 py-1 rounded-full text-xs font-semibold'
-          : '';
+        const estado = row.original.Estado;
+        let classes = '';
+        let content = value;
+        
+        switch (estado) {
+          case 0:
+            classes = 'bg-green-100 text-green-700 border border-green-300 px-2 py-1 rounded-full text-xs font-semibold';
+            break;
+          case 1:
+            classes = 'bg-red-100 text-red-700 border border-red-300 px-2 py-1 rounded-full text-xs font-semibold';
+            break;
+          case 2:
+            const partes = value.split("->");
+            content = (
+              <>
+                {partes[0]}
+                <span className="bg-green-100 text-green-700 border border-green-300 px-2 py-1 rounded-full text-xs font-semibold">
+                  {partes[1]?.trim()}
+                </span>
+              </>
+            );
+            break;
+          default:
+            break;
+        }
         return (
           <span className={classes}>
-            {value || ''}
+            {content}
           </span>
         );
       },
-      width: 100,
+      size: 100,
     },
     {
-      Header: 'OrdenFab',
-      accessor: 'Ordenfabricacion',
-      Cell: ({ value }) => value || '',
-      width: 100,
+      header: 'OrdenFab',
+      accessorKey: 'Ordenfabricacion',
+      cell: ({ getValue }) => getValue() || '',
+      size: 100,
+      enableColumnFilter: true,
+      filterFn: 'includesString',
     },
   ], []);
 
-  useEffect(() => {
-    if (columns.length > 0 && columnOrder.length === 0) {
-      const defaultOrder = columns.map(col => col.accessor);
-      setColumnOrder(defaultOrder);
-    }
-  }, [columns]);
-
-  const {
-    getTableProps,
-    getTableBodyProps,
-    headerGroups,
-    prepareRow,
-    page, // Usamos page en lugar de rows por la paginación
-    canPreviousPage,
-    canNextPage,
-    pageOptions,
-    pageCount,
-    gotoPage,
-    nextPage,
-    previousPage,
-    state: { pageIndex, pageSize },
-    setColumnOrder: setTableColumnOrder
-  } = useTable(
-    {
-      columns,
-      data: data || [],
-      initialState: {
-        pageIndex: 0,
-        pageSize: 18,
-        columnOrder: columnOrder.length ? columnOrder : columns.map(col => col.accessor)
-      },
-      autoResetPage: false,
+  const table = useReactTable({
+    data: data || [],
+    columns,
+    state: {
+      sorting,
+      globalFilter,
+      columnFilters,
     },
-    usePagination
-  );
+    onSortingChange: setSorting,
+    onGlobalFilterChange: setGlobalFilter,
+    onColumnFiltersChange: setColumnFilters,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    initialState: {
+      pagination: {
+        pageSize: 1500,
+      },
+    },
+  });
 
+  const handleSort = (columnId, direction) => {
+    setSorting([{ id: columnId, desc: direction === 'desc' }]);
+  };
 
+  const clearSort = (columnId) => {
+    setSorting(sorting.filter(sort => sort.id !== columnId));
+  };
 
-  const handleColumnReorder = (draggedId, targetId) => {
-    const newOrder = [...columnOrder];
-    const draggedIndex = newOrder.indexOf(draggedId);
-    const targetIndex = newOrder.indexOf(targetId);
+  const handleFilter = (columnId, value) => {
+    setColumnFilters(prev => 
+      prev.filter(filter => filter.id !== columnId).concat(
+        value ? { id: columnId, value } : []
+      )
+    );
+  };
 
-    if (draggedIndex === -1 || targetIndex === -1) return;
-
-    newOrder.splice(draggedIndex, 1);
-    newOrder.splice(targetIndex, 0, draggedId);
-
-    setColumnOrder(newOrder);
-    setTableColumnOrder(newOrder);
+  const clearFilter = (columnId) => {
+    setColumnFilters(prev => prev.filter(filter => filter.id !== columnId));
   };
 
   if (loading) return <LoadingMessage />;
@@ -208,127 +270,232 @@ const ResultsTable = ({ data, loading, error }) => {
   if (!data || data.length === 0) return <NoDataMessage />;
 
   return (
-    <DndProvider backend={HTML5Backend}>
-      <div className="overflow-x-auto shadow-sm rounded-lg border border-gray-200">
-        <table {...getTableProps()} className="min-w-full divide-y divide-gray-200">
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+      {/* Barra de búsqueda global */}
+      <div className="p-4 border-b border-gray-200">
+        <div className="flex items-center gap-4">
+          <div className="flex-1">
+            <label htmlFor="global-search" className="sr-only">Buscar</label>
+            <div className="relative rounded-md shadow-sm">
+              <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                <FunnelIcon className="h-5 w-5 text-gray-400" />
+              </div>
+              <input
+                id="global-search"
+                type="text"
+                value={globalFilter}
+                onChange={(e) => setGlobalFilter(e.target.value)}
+                placeholder="Buscar en todos los campos..."
+                className="block w-full rounded-md border-gray-300 pl-10 pr-12 focus:border-blue-500 focus:ring-blue-500 sm:text-sm py-2"
+              />
+              {globalFilter && (
+                <button
+                  onClick={() => setGlobalFilter('')}
+                  className="absolute inset-y-0 right-0 flex items-center pr-3"
+                >
+                  <span className="text-gray-400 hover:text-gray-600">✕</span>
+                </button>
+              )}
+            </div>
+          </div>
+          <div className="text-sm text-gray-500">
+            {table.getFilteredRowModel().rows.length} de {data.length} registros
+          </div>
+        </div>
+      </div>
+
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
-            {headerGroups.map(headerGroup => (
-              <tr {...headerGroup.getHeaderGroupProps()}>
-                {headerGroup.headers.map(column => (
-                  <DraggableHeader
-                    key={column.id}
-                    column={column}
-                    onColumnReorder={handleColumnReorder}
-                  />
-                ))}
+            {table.getHeaderGroups().map(headerGroup => (
+              <tr key={headerGroup.id}>
+                {headerGroup.headers.map(header => {
+                  const column = header.column;
+                  const isSorted = column.getIsSorted();
+                  const filterValue = columnFilters.find(f => f.id === column.id)?.value || '';
+                  
+                  return (
+                    <th
+                      key={header.id}
+                      colSpan={header.colSpan}
+                      style={{ width: header.column.columnDef.size }}
+                      className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span>{header.column.columnDef.header}</span>
+                        
+                        <div className="flex items-center gap-1">
+                          {/* Indicador de ordenamiento */}
+                          {isSorted && (
+                            <span className="text-gray-400">
+                              {isSorted === 'desc' ? <ChevronDownIcon className="h-4 w-4" /> : <ChevronUpIcon className="h-4 w-4" />}
+                            </span>
+                          )}
+                          
+                          {/* Indicador de filtro */}
+                          {filterValue && (
+                            <span className="text-blue-500">
+                              <FunnelIcon className="h-3 w-3" />
+                            </span>
+                          )}
+                          
+                          {/* Menú de opciones */}
+                          <Menu as="div" className="relative">
+                            <MenuButton className="text-gray-400 hover:text-gray-600 p-1 rounded hover:bg-gray-100">
+                              <Cog6ToothIcon className="h-4 w-4" />
+                            </MenuButton>
+                            
+                            {/* <Portal> */}
+                              <MenuItems className="fixed z-50 mt-1 w-48 bg-white rounded-md shadow-lg py-1 border border-gray-200">
+                                <div className="px-4 py-2 text-xs text-gray-500 border-b bg-gray-50">
+                                  {header.column.columnDef.header}
+                                </div>
+                                
+                                {/* Opciones de ordenamiento */}
+                                <MenuItem>
+                                  <button
+                                    onClick={() => handleSort(column.id, 'asc')}
+                                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700"
+                                  >
+                                    Ordenar A-Z
+                                  </button>
+                                </MenuItem>
+                                <MenuItem>
+                                  <button
+                                    onClick={() => handleSort(column.id, 'desc')}
+                                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700"
+                                  >
+                                    Ordenar Z-A
+                                  </button>
+                                </MenuItem>
+                                
+                                {/* Opciones de filtro */}
+                                {column.columnDef.enableColumnFilter && (
+                                  <>
+                                    <div className="border-t my-1" />
+                                    <div className="px-3 py-2">
+                                      <label className="block text-xs text-gray-500 mb-1">Filtrar:</label>
+                                      <input
+                                        type="text"
+                                        value={filterValue}
+                                        onChange={(e) => handleFilter(column.id, e.target.value)}
+                                        placeholder={`Filtrar ${header.column.columnDef.header}...`}
+                                        className="block w-full rounded-md border-gray-300 text-sm px-2 py-1 focus:border-blue-500 focus:ring-blue-500"
+                                      />
+                                      {filterValue && (
+                                        <button
+                                          onClick={() => clearFilter(column.id)}
+                                          className="mt-1 text-xs text-red-600 hover:text-red-800"
+                                        >
+                                          Limpiar filtro
+                                        </button>
+                                      )}
+                                    </div>
+                                  </>
+                                )}
+                                
+                                {/* Limpiar ordenamiento */}
+                                {isSorted && (
+                                  <MenuItem>
+                                    <button
+                                      onClick={() => clearSort(column.id)}
+                                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-red-50 hover:text-red-700 border-t"
+                                    >
+                                      Limpiar orden
+                                    </button>
+                                  </MenuItem>
+                                )}
+                              </MenuItems>
+                            {/* </Portal> */}
+                          </Menu>
+                        </div>
+                      </div>
+                    </th>
+                  );
+                })}
               </tr>
             ))}
           </thead>
-          <tbody {...getTableBodyProps()} className="bg-white divide-y divide-gray-200">
-            {page.map(row => { // Cambiado de rows a page
-              prepareRow(row);
-              return (
-                <tr {...row.getRowProps()} className="hover:bg-gray-50">
-                  {row.cells.map(cell => (
-                    <td
-                      {...cell.getCellProps()}
-                      className="px-3 py-2 whitespace-nowrap text-sm text-gray-700 font-sans text-so-gray bg-so-bg"
-                    >
-                      {cell.render('Cell')}
-                    </td>
-                  ))}
-                </tr>
-              );
-            })}
+          
+          <tbody className="bg-white divide-y divide-gray-200">
+            {table.getRowModel().rows.map(row => (
+              <tr key={row.id} className="hover:bg-gray-50">
+                {row.getVisibleCells().map(cell => (
+                  <td
+                    key={cell.id}
+                    style={{ width: cell.column.columnDef.size }}
+                    className="px-3 py-2 whitespace-nowrap text-sm text-gray-700 font-sans"
+                  >
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                  </td>
+                ))}
+              </tr>
+            ))}
           </tbody>
         </table>
-        {/* Controles de paginación */}
-        <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
-          <div className="flex-1 flex justify-between sm:hidden">
-            <button
-              onClick={() => previousPage()}
-              disabled={!canPreviousPage}
-              className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md ${!canPreviousPage ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white text-gray-700 hover:bg-gray-50'
-                }`}
-            >
-              Anterior
-            </button>
-            <button
-              onClick={() => nextPage()}
-              disabled={!canNextPage}
-              className={`ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md ${!canNextPage ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white text-gray-700 hover:bg-gray-50'
-                }`}
-            >
-              Siguiente
-            </button>
-          </div>
-          <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-            <div>
-              <p className="text-sm text-gray-700">
-                Mostrando <span className="font-medium">{pageIndex * pageSize + 1}</span> a{' '}
-                <span className="font-medium">
-                  {Math.min((pageIndex + 1) * pageSize, data.length)}
-                </span>{' '}
-                de <span className="font-medium">{data.length}</span> resultados
-              </p>
+      </div>
+
+      {/* Paginación */}
+      <div className="px-4 py-3 bg-white border-t border-gray-200 sm:px-6">
+        <div className="flex items-center justify-between">
+          <div className="flex-1 flex justify-between items-center">
+            <div className="text-sm text-gray-700">
+              Mostrando{' '}
+              <span className="font-medium">
+                {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1}
+              </span>{' '}
+              a{' '}
+              <span className="font-medium">
+                {Math.min(
+                  (table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize,
+                  table.getFilteredRowModel().rows.length
+                )}
+              </span>{' '}
+              de{' '}
+              <span className="font-medium">{table.getFilteredRowModel().rows.length}</span>{' '}
+              resultados
             </div>
-            <div>
-              <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                <button
-                  onClick={() => gotoPage(0)}
-                  disabled={!canPreviousPage}
-                  className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium ${!canPreviousPage ? 'text-gray-300 cursor-not-allowed' : 'text-gray-500 hover:bg-gray-50'
-                    }`}
-                >
-                  <span className="sr-only">Primera</span>
-                  <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                    <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
-                    <path fillRule="evenodd" d="M8.707 5.293a1 1 0 010 1.414L5.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                </button>
-                <button
-                  onClick={() => previousPage()}
-                  disabled={!canPreviousPage}
-                  className={`relative inline-flex items-center px-2 py-2 border border-gray-300 bg-white text-sm font-medium ${!canPreviousPage ? 'text-gray-300 cursor-not-allowed' : 'text-gray-500 hover:bg-gray-50'
-                    }`}
-                >
-                  <span className="sr-only">Anterior</span>
-                  <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                    <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                </button>
-                <span className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
-                  Página {pageIndex + 1} de {pageOptions.length}
-                </span>
-                <button
-                  onClick={() => nextPage()}
-                  disabled={!canNextPage}
-                  className={`relative inline-flex items-center px-2 py-2 border border-gray-300 bg-white text-sm font-medium ${!canNextPage ? 'text-gray-300 cursor-not-allowed' : 'text-gray-500 hover:bg-gray-50'
-                    }`}
-                >
-                  <span className="sr-only">Siguiente</span>
-                  <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                    <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                  </svg>
-                </button>
-                <button
-                  onClick={() => gotoPage(pageCount - 1)}
-                  disabled={!canNextPage}
-                  className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium ${!canNextPage ? 'text-gray-300 cursor-not-allowed' : 'text-gray-500 hover:bg-gray-50'
-                    }`}
-                >
-                  <span className="sr-only">Última</span>
-                  <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                    <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                    <path fillRule="evenodd" d="M11.293 14.707a1 1 0 010-1.414L14.586 10l-3.293-3.293a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                  </svg>
-                </button>
-              </nav>
+            
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => table.previousPage()}
+                disabled={!table.getCanPreviousPage()}
+                className="relative inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Anterior
+              </button>
+              
+              <span className="text-sm text-gray-700">
+                Página{' '}
+                <strong>
+                  {table.getState().pagination.pageIndex + 1} de {table.getPageCount()}
+                </strong>
+              </span>
+              
+              <button
+                onClick={() => table.nextPage()}
+                disabled={!table.getCanNextPage()}
+                className="relative inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Siguiente
+              </button>
+              
+              <select
+                value={table.getState().pagination.pageSize}
+                onChange={(e) => table.setPageSize(Number(e.target.value))}
+                className="border border-gray-300 rounded-md px-2 py-1 text-sm"
+              >
+                {[30, 100, 500, 1000, 1050].map(pageSize => (
+                  <option key={pageSize} value={pageSize}>
+                    Mostrar {pageSize}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
         </div>
       </div>
-    </DndProvider>
+    </div>
   );
 };
 

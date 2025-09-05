@@ -1,20 +1,20 @@
 import { useState, useEffect } from "react";
 import { CargaService } from "../../services/apiService";
 
-export const useCargaByCentros = (idCentro, listOfs) => {
+export const useCargaByCentros = (idSeccion, listOfs) => {
     const [data, setData] = useState([])
     const [loadingData, setLoading] = useState(false)
     const [errorData, setError] = useState(null)
 
     useEffect(() => {
-        if (!idCentro) return
+        if (!idSeccion) return
 
         const fetchData = async () => {
             setLoading(true);
             setError(null);
             try {
 
-                const result = await CargaService.CargaPorCentros(idCentro, listOfs)
+                const result = await CargaService.CargaPorSeccion(idSeccion, listOfs)
                 setData(result)
             }
             catch (err) {
@@ -25,7 +25,7 @@ export const useCargaByCentros = (idCentro, listOfs) => {
             }
         };
         fetchData();
-    }, [idCentro, listOfs])
+    }, [idSeccion, listOfs])
 
     return [data, loadingData, errorData]
 }

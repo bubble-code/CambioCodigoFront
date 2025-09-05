@@ -4,7 +4,7 @@ import ResultsTable from './ResultsTable';
 import FiltrosForm from './FiltrosForm';
 import { CargaService } from '../../services/apiService';
 import CargaCentros from './CargaCentros';
-import DetallesCargaCentros from './DetallesCargaCentros/DetallesCargaCentros'; 
+import CargaPorCentro from './DetallesCargaCentros/DetallesCargaCentros'; 
 
 function classNames(...classes) {
   return classes.filter(Boolean).join(' ');
@@ -31,6 +31,7 @@ const ListadoDeCarga = () => {
     try {
       const data = await CargaService.getListadoCarga(filtros);
       setResultados(data);
+      // console.log(data)
       const ofs = new Set()
       data.forEach(element => {
         if (element['Ordenfabricacion'] != null )
@@ -64,7 +65,7 @@ const ListadoDeCarga = () => {
         <div className="mt-6">
           <TabGroup>
             <TabList className="flex space-x-4 border-b border-gray-200">
-              {['Pedidos', 'CargaCentros', 'Calendario', 'Otro componente'].map((tab, idx) => (
+              {['Pedidos', 'CargaCentros', 'Carga por centros', 'Otro componente'].map((tab, idx) => (
                 <Tab
                   key={idx}
                   className={({ selected }) =>
@@ -97,7 +98,7 @@ const ListadoDeCarga = () => {
                 />
               </TabPanel>
               <TabPanel>
-                <DetallesCargaCentros
+                <CargaPorCentro
                   fechaDesde={filtros.fechaDesde}
                   fechaHasta={filtros.fechaHasta}
                   listaOfs={listOfs}

@@ -11,7 +11,7 @@ const FiltrosForm = ({ onSubmit, onReset, loading }) => {
     ofMas10Ops: true,
     reprocesos: true,
     bin: true,
-    sinOrigen: true,
+    soloPendientes: true,
   });
 
   const handleFiltroChange = (e) => {
@@ -41,7 +41,7 @@ const FiltrosForm = ({ onSubmit, onReset, loading }) => {
       ofMas10Ops: true,
       reprocesos: true,
       bin: true,
-      sinOrigen: true,
+      soloPendientes: true,
     });
     onReset();
   };
@@ -181,14 +181,14 @@ const FiltrosForm = ({ onSubmit, onReset, loading }) => {
         <div className="flex items-center">
           <input
             type="checkbox"
-            id="sinOrigen"
-            name="sinOrigen"
-            checked={filtros.sinOrigen}
+            id="soloPendientes"
+            name="soloPendientes"
+            checked={filtros.soloPendientes}
             onChange={handleFiltroChange}
             className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
           />
           <label htmlFor="sinOrigen" className="ml-2 block text-sm text-gray-700">
-            Sin Origen
+            Solo pendientes
           </label>
         </div>
       </div>
