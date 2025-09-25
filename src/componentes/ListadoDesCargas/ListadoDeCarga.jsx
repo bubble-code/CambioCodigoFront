@@ -5,6 +5,7 @@ import FiltrosForm from './FiltrosForm';
 import { CargaService } from '../../services/apiService';
 import CargaCentros from './CargaCentros';
 import CargaPorCentro from './DetallesCargaCentros/DetallesCargaCentros'; 
+import { data } from 'autoprefixer';
 
 function classNames(...classes) {
   return classes.filter(Boolean).join(' ');
@@ -31,7 +32,7 @@ const ListadoDeCarga = () => {
     try {
       const data = await CargaService.getListadoCarga(filtros);
       setResultados(data);
-      // console.log(data)
+      console.log(data)
       const ofs = new Set()
       data.forEach(element => {
         if (element['Ordenfabricacion'] != null )
@@ -99,9 +100,7 @@ const ListadoDeCarga = () => {
               </TabPanel>
               <TabPanel>
                 <CargaPorCentro
-                  fechaDesde={filtros.fechaDesde}
-                  fechaHasta={filtros.fechaHasta}
-                  listaOfs={listOfs}
+                  datas={data}
                 />
               </TabPanel>
               <TabPanel>

@@ -41,3 +41,146 @@ td, th {
   background-color: #cbd5e0;
   border-radius: 4px;
 }
+
+/* Mejoras para el tooltip */
+.tooltip-container {
+  position: relative;
+  display: inline-block;
+}
+
+.tooltip-content {
+  position: fixed;
+  z-index: 9999;
+  background: #1f2937;
+  color: white;
+  padding: 0.75rem;
+  border-radius: 0.375rem;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+  max-width: 300px;
+  opacity: 0;
+  transition: opacity 0.2s ease-in-out;
+  pointer-events: none;
+}
+
+.group:hover .tooltip-content {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Flecha del tooltip */
+.tooltip-arrow {
+  position: absolute;
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-top: 8px solid #1f2937;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* Scrollbars siempre visibles */
+.flex-1.overflow-auto {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e0 #f7fafc;
+  scrollbar-gutter: stable;
+}
+
+.flex-1.overflow-auto::-webkit-scrollbar {
+  width: 14px;
+  height: 14px;
+}
+
+.flex-1.overflow-auto::-webkit-scrollbar-track {
+  background: #f7fafc;
+  border-radius: 8px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+
+.flex-1.overflow-auto::-webkit-scrollbar-thumb {
+  background-color: #cbd5e0;
+  border-radius: 8px;
+  border: 3px solid #f7fafc;
+}
+
+.flex-1.overflow-auto::-webkit-scrollbar-thumb:hover {
+  background-color: #a0aec0;
+}
+
+.flex-1.overflow-auto::-webkit-scrollbar-corner {
+  background: #f7fafc;
+}
+
+/* Barra de paginación fija */
+.sticky.bottom-0 {
+  position: sticky;
+  bottom: 0;
+  background: white;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+}
+
+/* Mejoras de usabilidad */
+.min-h-\[500px\] {
+  min-height: 500px;
+}
+
+/* Estilos para la tabla */
+table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+th {
+  position: relative;
+  background: #f9fafb;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+}
+
+td, th {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+tr:last-child td {
+  border-bottom: none;
+}
+
+/* Hover effects */
+tr:hover {
+  background-color: #f9fafb;
+}
+
+/* Botones de paginación */
+button:hover:not(:disabled) {
+  background-color: #f3f4f6;
+  transform: translateY(-1px);
+}
+
+button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .flex-col {
+    flex-direction: column;
+  }
+  
+  .flex-col .gap-2 {
+    gap: 0.5rem;
+  }
+  
+  .text-sm {
+    font-size: 0.875rem;
+  }
+  
+  .sticky.bottom-0 {
+    position: relative;
+  }
+}

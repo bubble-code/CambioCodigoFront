@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback } from 'react';
+import { useMemo, useState, useCallback, useRef } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
@@ -8,7 +8,18 @@ import {
   flexRender,
 } from '@tanstack/react-table';
 import { Menu, MenuButton, MenuItems, MenuItem, Portal } from '@headlessui/react';
-import { ChevronUpDownIcon, FunnelIcon, ChevronUpIcon, ChevronDownIcon, Cog6ToothIcon } from '@heroicons/react/24/outline';
+import { 
+  ChevronUpIcon, 
+  ChevronDownIcon, 
+  Cog6ToothIcon, 
+  FunnelIcon,
+  ArrowDownTrayIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  ArrowsPointingInIcon
+} from '@heroicons/react/24/outline';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 import PropTypes from 'prop-types';
 import moment from 'moment';
 import { formatearNumero, formatearFechaES } from '../utils/cargaHelpers';
@@ -20,6 +31,29 @@ const ResultsTable = ({ data, loading, error }) => {
   const [sorting, setSorting] = useState([]);
   const [globalFilter, setGlobalFilter] = useState('');
   const [columnFilters, setColumnFilters] = useState([]);
+  const tableContainerRef = useRef(null);
+
+  // Función para obtener el valor formateado de una celda
+  const getFormattedValue = (cell) => {
+    const value = cell.getValue();
+    const columnId = cell.column.id;
+    
+    // Aplicar los mismos formatos que en la tabla
+    switch (columnId) {
+      case 'Precio':
+      case 'Total':
+        return formatearNumero(value, 2);
+      case 'QPendiente':
+      case 'Existencias':
+      case 'BIN':
+      case 'Disponible':
+        return formatearNumero(value);
+      case 'FechaReCliente':
+        return value ? formatearFechaES(value) : '';
+      default:
+        return value || '';
+    }
+  };
 
   const columns = useMemo(() => [
     {
@@ -240,10 +274,124 @@ const ResultsTable = ({ data, loading, error }) => {
     getPaginationRowModel: getPaginationRowModel(),
     initialState: {
       pagination: {
-        pageSize: 1500,
+        pageSize: 50,
       },
     },
   });
+
+  // Función para exportar a Excel con formato
+  const exportToExcel = useCallback(() => {
+    // Obtener los datos con el mismo formato que la tabla
+    const excelData = data.map(item => ({
+      'Artículo': item.IDArticulo || '-',
+      'Descripción': item.DescArticulo || '',
+      'DescCliente': item.DescCliente || '',
+      'FechaReCliente': item.FechaReCliente ? formatearFechaES(item.FechaReCliente) : '',
+      'Nota L': item.NotaL || '',
+      'QPendiente': formatearNumero(item.QPendiente),
+      'Stock': formatearNumero(item.Existencias),
+      'NPedido': item.NPedido || '',
+      'Linea': item.Linea || '',
+      'Precio': formatearNumero(item.Precio, 2),
+      'Total': formatearNumero(item.Total, 2),
+      'BIN': formatearNumero(item.BIN) || '',
+      'Disponible': formatearNumero(item.Disponible),
+      'FasesR': item.FaseR || '',
+      'OrdenFab': item.Ordenfabricacion || '',
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(excelData);
+    
+    // Ajustar anchos de columnas
+    const columnWidths = [
+      { wch: 10 },  // Artículo
+      { wch: 25 },  // Descripción
+      { wch: 15 },  // DescCliente
+      { wch: 15 },  // FechaReCliente
+      { wch: 8 },   // Nota L
+      { wch: 12 },  // QPendiente
+      { wch: 10 },  // Stock
+      { wch: 12 },  // NPedido
+      { wch: 8 },   // Linea
+      { wch: 12 },  // Precio
+      { wch: 12 },  // Total
+      { wch: 10 },  // BIN
+      { wch: 12 },  // Disponible
+      { wch: 15 },  // FasesR
+      { wch: 12 },  // OrdenFab
+    ];
+    
+    worksheet['!cols'] = columnWidths;
+
+    // Aplicar estilos a los headers
+    const headerStyle = {
+      font: { bold: true, color: { rgb: "FFFFFF" } },
+      fill: { fgColor: { rgb: "4B5563" } }, // Color gris
+      alignment: { horizontal: "center", vertical: "center" }
+    };
+
+    // Aplicar estilo a las celdas de header
+    const range = XLSX.utils.decode_range(worksheet['!ref']);
+    for (let C = range.s.c; C <= range.e.c; ++C) {
+      const cellAddress = XLSX.utils.encode_cell({ c: C, r: 0 });
+      if (!worksheet[cellAddress]) continue;
+      worksheet[cellAddress].s = headerStyle;
+    }
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Datos');
+    
+    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const dataBlob = new Blob([excelBuffer], { 
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+    });
+    
+    saveAs(dataBlob, 'tabla_datos.xlsx');
+  }, [data]);
+
+  // Función para exportar la página actual a Excel
+  const exportCurrentPageToExcel = useCallback(() => {
+    const currentPageData = table.getRowModel().rows.map(row => row.original);
+    
+    const excelData = currentPageData.map(item => ({
+      'Artículo': item.IDArticulo || '-',
+      'Descripción': item.DescArticulo || '',
+      'DescCliente': item.DescCliente || '',
+      'FechaReCliente': item.FechaReCliente ? formatearFechaES(item.FechaReCliente) : '',
+      'Nota L': item.NotaL || '',
+      'QPendiente': formatearNumero(item.QPendiente),
+      'Stock': formatearNumero(item.Existencias),
+      'NPedido': item.NPedido || '',
+      'Linea': item.Linea || '',
+      'Precio': formatearNumero(item.Precio, 2),
+      'Total': formatearNumero(item.Total, 2),
+      'BIN': formatearNumero(item.BIN) || '',
+      'Disponible': formatearNumero(item.Disponible),
+      'FasesR': item.FaseR || '',
+      'OrdenFab': item.Ordenfabricacion || '',
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(excelData);
+    
+    // Ajustar anchos de columnas (mismo que arriba)
+    const columnWidths = [
+      { wch: 10 }, { wch: 25 }, { wch: 15 }, { wch: 15 }, { wch: 8 },
+      { wch: 12 }, { wch: 10 }, { wch: 12 }, { wch: 8 }, { wch: 12 },
+      { wch: 12 }, { wch: 10 }, { wch: 12 }, { wch: 15 }, { wch: 12 }
+    ];
+    
+    worksheet['!cols'] = columnWidths;
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Página Actual');
+    
+    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const dataBlob = new Blob([excelBuffer], { 
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+    });
+    
+    saveAs(dataBlob, 'pagina_actual.xlsx');
+  }, [table]);
 
   const handleSort = (columnId, direction) => {
     setSorting([{ id: columnId, desc: direction === 'desc' }]);
@@ -270,11 +418,11 @@ const ResultsTable = ({ data, loading, error }) => {
   if (!data || data.length === 0) return <NoDataMessage />;
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-      {/* Barra de búsqueda global */}
-      <div className="p-4 border-b border-gray-200">
-        <div className="flex items-center gap-4">
-          <div className="flex-1">
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col h-full min-h-[500px]">
+      {/* Header con búsqueda y botones de exportación */}
+      <div className="p-4 border-b border-gray-200 bg-white">
+        <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
+          <div className="flex-1 w-full sm:w-auto">
             <label htmlFor="global-search" className="sr-only">Buscar</label>
             <div className="relative rounded-md shadow-sm">
               <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
@@ -298,13 +446,53 @@ const ResultsTable = ({ data, loading, error }) => {
               )}
             </div>
           </div>
-          <div className="text-sm text-gray-500">
-            {table.getFilteredRowModel().rows.length} de {data.length} registros
+          
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            <div className="text-sm text-gray-500 bg-gray-100 px-3 py-2 rounded-md">
+              {table.getFilteredRowModel().rows.length} de {data.length} registros
+            </div>
+            
+            <Menu as="div" className="relative">
+              <MenuButton className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors w-full sm:w-auto justify-center">
+                <ArrowDownTrayIcon className="h-4 w-4" />
+                Exportar
+              </MenuButton>
+              
+              {/* <Portal> */}
+                <MenuItems className="fixed z-50 mt-1 w-48 bg-white rounded-md shadow-lg py-1 border border-gray-200">
+                  <MenuItem>
+                    <button
+                      onClick={exportToExcel}
+                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700"
+                    >
+                      Exportar todos los datos
+                    </button>
+                  </MenuItem>
+                  <MenuItem>
+                    <button
+                      onClick={exportCurrentPageToExcel}
+                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700"
+                    >
+                      Exportar página actual
+                    </button>
+                  </MenuItem>
+                </MenuItems>
+              {/* </Portal> */}
+            </Menu>
           </div>
         </div>
       </div>
 
-      <div className="overflow-x-auto">
+      {/* Contenedor de tabla con scroll siempre visible */}
+      <div 
+        ref={tableContainerRef}
+        className="flex-1 overflow-auto"
+        style={{ 
+          maxHeight: 'calc(100vh - 250px)',
+          scrollbarWidth: 'thin',
+          scrollbarGutter: 'stable'
+        }}
+      >
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             {table.getHeaderGroups().map(headerGroup => (
@@ -322,24 +510,21 @@ const ResultsTable = ({ data, loading, error }) => {
                       className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                     >
                       <div className="flex items-center justify-between">
-                        <span>{header.column.columnDef.header}</span>
+                        <span className="truncate">{header.column.columnDef.header}</span>
                         
                         <div className="flex items-center gap-1">
-                          {/* Indicador de ordenamiento */}
                           {isSorted && (
                             <span className="text-gray-400">
                               {isSorted === 'desc' ? <ChevronDownIcon className="h-4 w-4" /> : <ChevronUpIcon className="h-4 w-4" />}
                             </span>
                           )}
                           
-                          {/* Indicador de filtro */}
                           {filterValue && (
                             <span className="text-blue-500">
                               <FunnelIcon className="h-3 w-3" />
                             </span>
                           )}
                           
-                          {/* Menú de opciones */}
                           <Menu as="div" className="relative">
                             <MenuButton className="text-gray-400 hover:text-gray-600 p-1 rounded hover:bg-gray-100">
                               <Cog6ToothIcon className="h-4 w-4" />
@@ -351,7 +536,6 @@ const ResultsTable = ({ data, loading, error }) => {
                                   {header.column.columnDef.header}
                                 </div>
                                 
-                                {/* Opciones de ordenamiento */}
                                 <MenuItem>
                                   <button
                                     onClick={() => handleSort(column.id, 'asc')}
@@ -369,7 +553,6 @@ const ResultsTable = ({ data, loading, error }) => {
                                   </button>
                                 </MenuItem>
                                 
-                                {/* Opciones de filtro */}
                                 {column.columnDef.enableColumnFilter && (
                                   <>
                                     <div className="border-t my-1" />
@@ -394,7 +577,6 @@ const ResultsTable = ({ data, loading, error }) => {
                                   </>
                                 )}
                                 
-                                {/* Limpiar ordenamiento */}
                                 {isSorted && (
                                   <MenuItem>
                                     <button
@@ -435,62 +617,79 @@ const ResultsTable = ({ data, loading, error }) => {
         </table>
       </div>
 
-      {/* Paginación */}
-      <div className="px-4 py-3 bg-white border-t border-gray-200 sm:px-6">
-        <div className="flex items-center justify-between">
-          <div className="flex-1 flex justify-between items-center">
-            <div className="text-sm text-gray-700">
-              Mostrando{' '}
-              <span className="font-medium">
-                {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1}
-              </span>{' '}
-              a{' '}
-              <span className="font-medium">
-                {Math.min(
-                  (table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize,
-                  table.getFilteredRowModel().rows.length
-                )}
-              </span>{' '}
-              de{' '}
-              <span className="font-medium">{table.getFilteredRowModel().rows.length}</span>{' '}
-              resultados
-            </div>
+      {/* Barra de paginación fija en la parte inferior */}
+      <div className="px-4 py-3 bg-white border-t border-gray-200 sticky bottom-0 z-10">
+        <div className="flex flex-col sm:flex-row gap-4 justify-between items-center">
+          <div className="text-sm text-gray-700">
+            Mostrando{' '}
+            <span className="font-medium">
+              {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1}
+            </span>{' '}
+            a{' '}
+            <span className="font-medium">
+              {Math.min(
+                (table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize,
+                table.getFilteredRowModel().rows.length
+              )}
+            </span>{' '}
+            de{' '}
+            <span className="font-medium">{table.getFilteredRowModel().rows.length}</span>{' '}
+            resultados
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <select
+              value={table.getState().pagination.pageSize}
+              onChange={(e) => table.setPageSize(Number(e.target.value))}
+              className="border border-gray-300 rounded-md px-2 py-1 text-sm"
+            >
+              {[10, 30, 50, 100,1500].map(pageSize => (
+                <option key={pageSize} value={pageSize}>
+                  Mostrar {pageSize}
+                </option>
+              ))}
+            </select>
             
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => table.setPageIndex(0)}
+                disabled={!table.getCanPreviousPage()}
+                className="p-1 rounded border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
+                title="Primera página"
+              >
+                <ArrowsPointingInIcon className="h-4 w-4 transform rotate-90" />
+              </button>
+              
               <button
                 onClick={() => table.previousPage()}
                 disabled={!table.getCanPreviousPage()}
-                className="relative inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="p-1 rounded border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
+                title="Página anterior"
               >
-                Anterior
+                <ChevronLeftIcon className="h-4 w-4" />
               </button>
               
-              <span className="text-sm text-gray-700">
-                Página{' '}
-                <strong>
-                  {table.getState().pagination.pageIndex + 1} de {table.getPageCount()}
-                </strong>
+              <span className="text-sm text-gray-700 px-2 min-w-[100px] text-center">
+                Página {table.getState().pagination.pageIndex + 1} de {table.getPageCount()}
               </span>
               
               <button
                 onClick={() => table.nextPage()}
                 disabled={!table.getCanNextPage()}
-                className="relative inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="p-1 rounded border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
+                title="Página siguiente"
               >
-                Siguiente
+                <ChevronRightIcon className="h-4 w-4" />
               </button>
               
-              <select
-                value={table.getState().pagination.pageSize}
-                onChange={(e) => table.setPageSize(Number(e.target.value))}
-                className="border border-gray-300 rounded-md px-2 py-1 text-sm"
+              <button
+                onClick={() => table.setPageIndex(table.getPageCount() - 1)}
+                disabled={!table.getCanNextPage()}
+                className="p-1 rounded border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
+                title="Última página"
               >
-                {[30, 100, 500, 1000, 1050].map(pageSize => (
-                  <option key={pageSize} value={pageSize}>
-                    Mostrar {pageSize}
-                  </option>
-                ))}
-              </select>
+                <ArrowsPointingInIcon className="h-4 w-4 transform -rotate-90" />
+              </button>
             </div>
           </div>
         </div>

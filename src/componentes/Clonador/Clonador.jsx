@@ -5,11 +5,24 @@ import ArticuloDashboard from '../ArticuloDashboard/ArticuloDashboard'
 const UpdateArticuloForm = () => {
     const [oldIdArticulo, setOldIdArticulo] = useState('');
     const [newIdArticulo, setNewIdArticulo] = useState('');
+    const [baseDatos, setBaseDatos] = useState('solmicro');
     const [message, setMessage] = useState('');
     const [suggestions, setSuggestions] = useState([]);
     const [cargando, setCargando] = useState(false);
 
     const descArticuloRef = useRef(null);
+
+    const listDB = ['solmicro', 'mobi-endo'];
+
+    const handleBaseDatos = (db) => {
+        setBaseDatos(db);
+        setSuggestions([]);
+        setOldIdArticulo('');
+        setNewIdArticulo('');
+        if (descArticuloRef.current) {
+            descArticuloRef.current.value = '';
+        }
+    };
 
     const handleSubmit = async (event) => {
         event.preventDefault();
@@ -25,6 +38,7 @@ const UpdateArticuloForm = () => {
                 body: JSON.stringify({
                     old_id_articulo: oldIdArticulo,
                     new_id_articulo: newIdArticulo,
+                    base_datos: baseDatos
                 }),
             });
 
@@ -52,7 +66,7 @@ const UpdateArticuloForm = () => {
         setOldIdArticulo(search);
         if (search.length > 2) {
             try {
-                const response = await axios.get(`http://10.0.0.19:5000/autocomplete?search=${search}`);
+                const response = await axios.get(`http://10.0.0.19:5000/autocomplete?search=${search}&db=${baseDatos}`);
                 // const response = await axios.get(`http://192.168.1.145/autocomplete?search=${search}`);
                 setSuggestions(response.data);
             } catch (error) {
@@ -75,6 +89,22 @@ const UpdateArticuloForm = () => {
             <div className="max-w-4xl mx-auto mt-10 p-6 bg-white shadow-md rounded-md">
                 <h1 className="text-xl font-bold mb-4">Clonador de Artículos</h1>
                 <form className="space-y-4" onSubmit={handleSubmit}>
+                    <div className="flex items-center space-x-4 w-full">
+                        <label className="block text-sm font-medium text-gray-700 whitespace-nowrap">
+                            Seleccione la base de datos:
+                        </label>
+                        <select
+                            value={baseDatos}
+                            onChange={(e) => handleBaseDatos(e.target.value)}
+                            className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                        >
+                            {listDB.map((db) => (
+                                <option key={db} value={db}>
+                                    {db.toUpperCase()}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
                     <div className="flex space-x-4">
                         <div className="w-1/2 relative">
                             <label className="block text-sm font-medium text-gray-700">Old ID Articulo:</label>
@@ -117,19 +147,20 @@ const UpdateArticuloForm = () => {
                     </div>
                     <button className="w-full bg-indigo-600 text-white py-2 px-4 rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                         type="submit"
-                        disabled={newIdArticulo.trim().length<3 || cargando}
+                        disabled={newIdArticulo.trim().length < 3 || cargando}
                     >{cargando ? "Renombrando" : "Renombrar Articulo"}</button>
                 </form>
                 {message && <p className="mt-4 text-center text-sm text-green-600">{message}</p>}
             </div>
 
             {/* Separador visual */}
-            <div className="w-full mt-6 border-t-2 border-orange-500 px-4">
+            <div className='h-60'></div>
+            <div className="w-full mt-16 border-t-2 border-orange-500 px-4">
                 <h2 className="text-xs font-bold text-orange-500 mt-2">Detalles del Artículo</h2>
             </div>
 
             <div className="w-full px-4 mt-6 text-sm text-gray-700 font-light">
-                <ArticuloDashboard idArticulo={oldIdArticulo}/>
+                <ArticuloDashboard idArticulo={oldIdArticulo} />
             </div>
 
         </div>

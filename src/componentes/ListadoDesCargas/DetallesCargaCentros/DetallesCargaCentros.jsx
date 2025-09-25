@@ -7,15 +7,18 @@ import { useCargaByCentros } from '../../Hooks/useCargaByCentros';
 import CentrosMenu from './CentrosMenu';
 import CargaTabla from './CargaTabla';
 
-const CargaPorCentro = ({ listaOfs }) => {
+const CargaPorCentro = ({datas}) => {
     const { centros, loading, error } = useCentros()
     const [selectedCentro, setSelectedCentro] = useState(null);
 
+    console.log(source)
+
     const { data, loading: loadingData, error: errorData } = useCargaByCentros(
         selectedCentro?.IDSeccion,
-        listaOfs
+        // listaOfs
+        []
     );
-    console.log(selectedCentro?.IDSeccion)
+    // console.log(selectedCentro?.IDSeccion)
     const columns = useMemo(() => [
         { Header: 'Artículo', accessor: 'IDArticulo', Cell: ({ value }) => value || '' },
         { Header: 'DescArticulo', accessor: 'DescArticulo', Cell: ({ value }) => value || '' },
