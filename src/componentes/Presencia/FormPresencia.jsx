@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import axios from 'axios';
 import { sub } from 'date-fns';
+import { CargaService } from '../../services/apiService';
 
 const FormPresencia = () => {
     const [idOperario, setIdOperario] = useState('');
@@ -22,7 +23,7 @@ const FormPresencia = () => {
             const dia = fechaObj.getDate().toString().padStart(2, '0');
             const mes = (fechaObj.getMonth() + 1).toString().padStart(2, '0');
             const año = fechaObj.getFullYear();
-            const horasMenos = fechaObj.getHours() - 2 ;
+            const horasMenos = fechaObj.getHours() - 0 ;
             const horas = horasMenos.toString().padStart(2, '0');
             const minutos = fechaObj.getMinutes().toString().padStart(2, '0');
 
@@ -55,11 +56,12 @@ const FormPresencia = () => {
         setError(null);
 
         try {
-            const response = await axios.post('http://10.0.0.19:5000/getFichajes', {
-                idoperario: idOperario,
-                fechaDesde: fechaDesde,
-                fechaHasta: fechaHasta
-            });
+            // const response = await axios.post('http://10.0.0.19:5000/getFichajes', {
+            //     idoperario: idOperario,
+            //     fechaDesde: fechaDesde,
+            //     fechaHasta: fechaHasta
+            // });
+            const response = await CargaService.GetFichajes(fechaDesde,fechaHasta,idOperario)
 
             setResultados(response.data);
             console.log(response.data)
@@ -94,7 +96,7 @@ const FormPresencia = () => {
                             onChange={(e) => setIdOperario(e.target.value)}
                             className="w-full px-3 py-2 border border-gray-300 rounded-md"
                             placeholder="Ej: FV10"
-                            required
+                            // required
                             pattern="FV\d+"
                             title="El ID debe comenzar con FV seguido de números"
                         />

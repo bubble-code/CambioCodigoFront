@@ -82,6 +82,19 @@ export const CargaService = {
     } catch (error) {
       throw new Error(error.message || 'Error al obtener la carga por centros')
     }
+  },
+  async GetFichajes(fechaDesde, fechaHasta, idoperario) {
+    try {
+      const response = await apiClient.post('/getFichajes', {
+        idoperario,
+        fechaDesde,
+        fechaHasta
+      });
+      return response;
+    }
+    catch (error) {
+      throw new Error(error.message || 'Error al obtener la carga por centros')
+    }
   }
 };
 
