@@ -2,19 +2,45 @@
 @tailwind components;
 @tailwind utilities;
 
+/* === Tema iOS — soft light === */
+:root {
+    --app-bg:           #F2F2F7;              /* iOS systemBackground        */
+    --app-surface:      #FFFFFF;              /* iOS secondaryBackground     */
+    --app-accent:       #007AFF;              /* iOS Blue                    */
+    --app-accent-light: #339AF0;              /* iOS Blue más suave          */
+    --app-text:         #1C1C1E;              /* iOS label                   */
+    --app-muted:        #8E8E93;              /* iOS secondaryLabel          */
+    --app-border:       rgba(60, 60, 67, 0.18); /* iOS separator             */
+}
+
+html, body, #root {
+    background-color: var(--app-bg);
+    color: var(--app-text);
+    min-height: 100vh;
+    margin: 0;
+}
+
+/*
+  Reset para formularios nativos:
+  Los inputs/selects/textareas heredan el color claro del body.
+  Cuando tienen fondo blanco (bg-white, bg-gray-*) el texto queda invisible.
+  Este reset les devuelve texto oscuro por defecto; las clases Tailwind
+  de texto explícitas (text-white, text-gray-900, etc.) siguen teniendo prioridad.
+*/
+input:not([class*="text-"]),
+select:not([class*="text-"]),
+textarea:not([class*="text-"]),
+option {
+    color: #1C1C1E;
+}
+
 /* Tailwind CSS Loader Spinner */
 .loader {
     border-top-color: #3498db;
-    /* Color del borde superior del spinner */
     animation: spinner 0.6s linear infinite;
 }
 
 @keyframes spinner {
-    0% {
-        transform: rotate(0deg);
-    }
-
-    100% {
-        transform: rotate(360deg);
-    }
+    0%   { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }

@@ -22,11 +22,16 @@ export default {
     },
     extend: {
       colors: {
-        'so-gray': '#24292e', // Color de texto similar a Stack Overflow
-        'so-bg': '#f8f9f9', // Fondo similar
-      },
-      backgroundImage: {
-        'favram': "url('src/assets/favram01.jpg')"
+        'so-gray': '#bbbcbdff',
+        'so-bg': '#f8f9f9',
+        // === Tema iOS — soft light ===
+        'app-bg': '#F2F2F7',
+        'app-surface': '#FFFFFF',
+        'app-accent': '#007AFF',
+        'app-accent-light': '#339AF0',
+        'app-text': '#1C1C1E',
+        'app-muted': '#8E8E93',
+        'app-border': 'rgba(60,60,67,0.18)',
       },
     },
   },

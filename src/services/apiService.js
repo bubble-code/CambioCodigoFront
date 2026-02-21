@@ -98,3 +98,23 @@ export const CargaService = {
   }
 };
 
+export const ConsultaIAService = {
+  /**
+   * Envía una consulta en lenguaje natural al backend.
+   * El backend gestiona: schema → LLM → SQL → ejecución → resultados.
+   * @param {string} query       - Pregunta del usuario en lenguaje natural
+   * @param {string} moduleId    - ID del módulo (ej. 'articulos')
+   * @returns {{ sql: string, results: object[], answer: string }}
+   */
+  async postConsulta(query, moduleId) {
+    try {
+      const response = await apiClient.post('/consulta-ia', {
+        query,
+        module: moduleId,
+      });
+      return response.data;
+    } catch (error) {
+      throw new Error(error.message || 'Error al realizar la consulta IA');
+    }
+  },
+};

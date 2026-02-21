@@ -3,6 +3,7 @@ import Layout from "../componentes/Layout/Layout"
 import Clonador from "../componentes/Clonador/Clonador"
 import Tutoriales from "../componentes/Tutoriales/notasOFs"
 import IaLayout from "../componentes/IA/IaLayout"
+import ConsultaIA from "../componentes/IA/ConsultaIA"
 import HelpCarousel from "../componentes/HelpCarousel/HelpCarousel"
 import { LayoutOF } from "../componentes/OrdenFabricacion/Layout"
 import ExcelViewer from "../componentes/ExcelViewer/ExcelViewer"
@@ -61,10 +62,16 @@ export const routes = createBrowserRouter([
             element: <ListadoDeCarga />
           }
         ]
-      }, {
+      },
+      {
         path: 'restartServices',
         element: <Dashboard />
-      }, {
+      },
+      {
+        path: 'consultaIA',
+        element: <ConsultaIA />
+      },
+      {
         path: 'presencia',
         element: <PresenciaLayOut />
       }
